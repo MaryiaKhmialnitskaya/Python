@@ -1,3 +1,9 @@
+"""
+-AdventureWorks2014. из query стоит удалить тк есть в connection_str и изменения имени бызв придется править в неск местах
+-config ты сейчас используешь как dictionary, сделай его .ini файлом
+-вызови конфиг из мэйна через аргумент (например помести конфиг в другую папку и задай там другой запрос чтоб протестить)
+"""
+
 import logging.config
 import json 
 import os.path
@@ -53,8 +59,8 @@ def main():
     logger.info('Saving table data to file ')
     
     save_path = config.FILE_CONFIG['save_path']
-    name_of_file = 'ExtractedData'
-    completeName = os.path.join(save_path, name_of_file+".txt")         
+    name_of_file = config.FILE_CONFIG['name_of_file']
+    completeName = os.path.join(save_path, name_of_file+config.FILE_CONFIG['extension'])         
     file1 = open(completeName, "w")
     file1.write(data)
     file1.close()
