@@ -3,7 +3,8 @@ import json
 import os.path
 import pyodbc
 import configparser
-
+import argparse
+    
 def setup_logging(
     default_path='logging.json',
     default_level=logging.INFO,
@@ -29,7 +30,13 @@ def connect_db(con_str):
 
 def main(): 
     config = configparser.ConfigParser()
-    config.read('config.ini')
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--config", help="path to config file")
+    args = parser.parse_args()
+    if args.config:
+        config.read(config, '\config.ini')
+    else:
+        config.read('config.ini')
     setup_logging()    
     logger = logging.getLogger(__name__)
     logger.info('Startlogging:')
@@ -56,7 +63,7 @@ def main():
     
     save_path = config.get("FILE_CONFIG",'save_path')
     name_of_file = config.get("FILE_CONFIG",'name_of_file')
-    completeName = os.path.join(save_path, name_of_file+config.get("FILE_CONFIG",'extension'))         
+    completeName = os.path.join(save_path, '.', name_of_file+config.get("FILE_CONFIG",'extension'))         
     file1 = open(completeName, "w")
     file1.write(data)
     file1.close()
