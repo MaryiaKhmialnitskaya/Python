@@ -6,16 +6,24 @@ import configparser
 import argparse
     
 class Database:
-    def __init__(self, name):
-        self._conn = pyodbc.connect(name)
+    def __init__(self, name, logger):
+        self._log=logger
+        self._log.info('Initializing db')
+        try:
+            self._conn = pyodbc.connect(name)
+        except pyodbc.ProgrammingError as e:
+            logger.logging.warning('There was a pyodbc warning.  This is the info we have about it: %s' %(e) )
         self._cursor = self._conn.cursor()
+
 
     def __enter__(self):
         return self
         
     def __exit__(self, exc_type, exc_val, exc_tb):
+        self._log.info('Closing connection')
         self.commit()
         self.connection.close()
+
         
     @property
     def connection(self):
@@ -26,9 +34,11 @@ class Database:
         return self._cursor
         
     def commit(self):
+        self._log.info('Commiting the query')
         self.connection.commit()
 
-    def query(self, sql, params=None):
+    def query(self, sql ,params=None):
+        self._log.info('Executing the query')
         self.cursor.execute(sql, params or ())
 
     def fetchall(self):
@@ -77,10 +87,11 @@ def main():
     #Set up logging
     setup_logging()    
     logger = logging.getLogger(__name__)
-    logger.info('Startlogging:')
+    logger.info('Start logging:')
 
 
-    with Database(config.get("DATABASE_CONFIG",'connection_str')) as db:  
+    #Connect to db and execute query 
+    with Database(config.get("DATABASE_CONFIG",'connection_str'), logger) as db:  
         db.query(config.get("SQL_CONFIG",'sel_q'))
         data=str(db.fetchall())
 
@@ -93,6 +104,8 @@ def main():
     file1 = open(completeName, "w")
     file1.write(data)
     file1.close()
+    
+    logger.info('Logging finished')
 
 if __name__ == "__main__": 
     main()
