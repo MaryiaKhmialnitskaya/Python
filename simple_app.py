@@ -5,6 +5,39 @@ import pyodbc
 import configparser
 import argparse
     
+class Database:
+    def __init__(self, name):
+        self._conn = pyodbc.connect(name)
+        self._cursor = self._conn.cursor()
+
+    def __enter__(self):
+        return self
+        
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.commit()
+        self.connection.close()
+        
+    @property
+    def connection(self):
+        return self._conn
+
+    @property
+    def cursor(self):
+        return self._cursor
+        
+    def commit(self):
+        self.connection.commit()
+
+    def query(self, sql, params=None):
+        self.cursor.execute(sql, params or ())
+
+    def fetchall(self):
+        return self.cursor.fetchall()
+
+    def fetchone(self):
+        return self.cursor.fetchone()
+
+
 def setup_logging(
     default_path='logging.json',
     default_level=logging.INFO,
@@ -46,25 +79,11 @@ def main():
     logger = logging.getLogger(__name__)
     logger.info('Startlogging:')
 
-    #Connect to db 
-    try:
-        cnxn=connect_db(config.get("DATABASE_CONFIG",'connection_str'))
-    
-    except pyodbc.ProgrammingError as e:
-        logger.logging.warning('There was a pyodbc warning.  This is the info we have about it: %s' %(e) )
-           
-    logger.info('Extracting table data  ')
-    
-    #Execute the query 
-    cursor = cnxn.cursor()
-    sql=config.get("SQL_CONFIG",'sel_q')
-    cursor.execute(sql)
-    data=str(cursor.fetchall())
-    
-    
-    cnxn.close()
-    
-    
+
+    with Database(config.get("DATABASE_CONFIG",'connection_str')) as db:  
+        db.query(config.get("SQL_CONFIG",'sel_q'))
+        data=str(db.fetchall())
+
     logger.info('Saving table data to file ')
     
     #Wrire the info read to file
